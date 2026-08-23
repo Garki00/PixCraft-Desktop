@@ -1,0 +1,30 @@
+{
+  "name": "pixcraft-desktop",
+  "version": "1.0.0",
+  "description": "画像转化桌面端",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.aaagarki.pixcraft",
+    "productName": "PixCraft",
+    "asar": false,
+    "files": [
+      "src/**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "favicon.ico"
+    }
+  },
+  "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.1",
+    "koffi": "^3.1.6"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}

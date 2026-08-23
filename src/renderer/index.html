@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>画像转化</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- 左侧主内容 -->
+  <div class="main-col" id="mainCol">
+
+    <header class="app-header">
+      <div class="header-mark">◇</div>
+      <p class="header-sub">画像转化</p>
+    </header>
+
+    <!-- 导入 -->
+    <section id="uploadStage" class="stage stage--active">
+      <div class="step-label"><span>01</span>导入图片</div>
+      <div id="dropzone" class="dropzone">
+        <div class="dropzone-icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <path d="M20 6V26M20 6L12 14M20 6L28 14" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+            <path d="M6 30V33C6 33.5523 6.44772 34 7 34H33C33.5523 34 34 33.5523 34 33V30" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </div>
+        <p class="dropzone-title">拖拽图片到此处</p>
+        <p class="dropzone-sub">或点击选择文件</p>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+    </section>
+
+    <!-- 裁剪 -->
+    <section id="cropStage" class="stage">
+      <div class="step-label"><span>02</span>裁剪画面（1:1）</div>
+      <div class="crop-wrap">
+        <div id="cropContainer" class="crop-container">
+          <img id="cropImage" alt="">
+          <div id="cropBox" class="crop-box">
+            <div class="crop-box-grid">
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+            </div>
+            <div id="cropHandle" class="crop-handle"></div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="cancelCropBtn" class="btn btn--ghost">取消</button>
+        <button id="confirmCropBtn" class="btn btn--primary">确定裁剪</button>
+      </div>
+    </section>
+
+    <!-- 结果 -->
+    <section id="resultStage" class="stage">
+      <div class="step-label"><span>03</span>生成结果</div>
+      <label class="toggle-row">
+        <input type="checkbox" id="labelToggle">
+        <span>查看颜色标号</span>
+      </label>
+      <div class="result-wrap">
+        <canvas id="resultCanvas"></canvas>
+      </div>
+      <div class="btn-row">
+        <button id="restartBtn" class="btn btn--ghost">重新导入</button>
+        <button id="autoFillBtn" class="btn btn--ghost">自动填色</button>
+        <button id="downloadBtn" class="btn btn--primary">下载图片</button>
+      </div>
+    </section>
+
+    <!-- 自动填色页面 -->
+    <section id="fillStage" class="stage">
+      <div class="step-label">
+        <span>04</span>自动填色
+        <button id="fillBackBtn" class="btn btn--ghost fill-back-btn">← 返回</button>
+      </div>
+      <div class="fill-layout">
+        <!-- 左：预览 -->
+        <div class="fill-preview-col">
+          <canvas id="fillPreviewCanvas" width="720" height="720"></canvas>
+        </div>
+        <!-- 右：控制面板 -->
+        <div class="fill-control-col">
+
+          <!-- 窗口选择 -->
+          <div class="fill-section">
+            <div class="fill-section-label">窗口选择</div>
+            <div class="fill-window-status" id="fillWindowStatus">
+              <span id="fillWindowName">正在检测明日方舟窗口…</span>
+            </div>
+            <div id="fillWindowSelectWrap" class="fill-window-select-wrap" style="display:none">
+              <span class="fill-match-fail">未找到匹配窗口，请手动选择：</span>
+              <select id="fillWindowSelect" class="fill-select"></select>
+            </div>
+            <button id="fillRefreshWindowsBtn" class="btn btn--ghost fill-sm-btn">刷新窗口列表</button>
+          </div>
+
+          <!-- 跳过白色 -->
+          <div class="fill-section">
+            <div class="fill-section-label">跳过白色</div>
+            <label class="toggle-row">
+              <input type="checkbox" id="skipWhiteChk" checked>
+              <span>调色板选择时跳过白色 [255,255,255]</span>
+            </label>
+          </div>
+
+          <!-- 绘制间隔 -->
+          <div class="fill-section">
+            <div class="fill-section-label">绘制间隔（ms）</div>
+            <input type="number" id="fillIntervalInput" class="fill-number-input"
+              min="0" max="1000" value="0" step="1">
+            <div class="fill-hint">每个色块点击后的等待时间，0–1000ms</div>
+          </div>
+
+          <!-- 日志 -->
+          <div class="fill-section fill-log-section">
+            <div class="fill-section-label">日志</div>
+            <div id="fillLog" class="fill-log"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 底部操作 -->
+      <div class="btn-row fill-action-row">
+        <button id="startFillBtn" class="btn btn--primary">开始填色</button>
+        <button id="stopFillBtn" class="btn btn--ghost" style="display:none">停止</button>
+        <span class="fill-hint" style="margin-left:10px;line-height:34px;align-self:center">快捷键F7开始，F8停止</span>
+      </div>
+    </section>
+
+  </div><!-- /main-col -->
+
+  <!-- 右侧高级选项（始终显示） -->
+  <aside class="adv-panel" id="advPanel">
+    <div class="adv-panel-header">高级选项</div>
+
+    <div class="adv-section">
+      <div class="adv-label">选项 1 &nbsp;缩放算法</div>
+      <div class="adv-radio-group">
+        <label class="adv-radio"><input type="radio" name="scaleAlgo" value="browser" checked><span>浏览器高质量<em class="adv-default">默认</em></span></label>
+        <label class="adv-radio"><input type="radio" name="scaleAlgo" value="nearest"><span>最近邻插值</span></label>
+        <label class="adv-radio"><input type="radio" name="scaleAlgo" value="progressive"><span>渐进双线性</span></label>
+        <label class="adv-radio"><input type="radio" name="scaleAlgo" value="area"><span>区域平均</span></label>
+      </div>
+    </div>
+
+    <div class="adv-section">
+      <div class="adv-label">选项 2 &nbsp;取样算法</div>
+      <div class="adv-radio-group">
+        <label class="adv-radio"><input type="radio" name="sampleAlgo" value="average" checked><span>均值取样<em class="adv-default">默认</em></span></label>
+        <label class="adv-radio"><input type="radio" name="sampleAlgo" value="center"><span>中心点取样</span></label>
+        <label class="adv-radio"><input type="radio" name="sampleAlgo" value="gaussian"><span>高斯加权</span></label>
+        <label class="adv-radio"><input type="radio" name="sampleAlgo" value="median"><span>中值取样</span></label>
+      </div>
+    </div>
+
+    <div class="adv-section">
+      <div class="adv-label">选项 3 &nbsp;对比度 &nbsp;<span id="contrastVal" class="adv-val">1.20</span><em class="adv-default">默认 1.2</em></div>
+      <input type="range" id="contrastSlider" class="adv-slider" min="0" max="3" step="0.05" value="1.2">
+    </div>
+
+    <div class="adv-section">
+      <div class="adv-label">选项 4 &nbsp;锐化强度 &nbsp;<span id="sharpenVal" class="adv-val">0.60</span><em class="adv-default">默认 0.6</em></div>
+      <input type="range" id="sharpenSlider" class="adv-slider" min="0" max="2" step="0.05" value="0.6">
+    </div>
+
+    <div class="adv-section">
+      <div class="adv-label">选项 5 &nbsp;量化算法</div>
+      <div class="adv-radio-group">
+        <label class="adv-radio"><input type="radio" name="quantAlgo" value="redmean" checked><span>Redmean<em class="adv-default">默认</em></span></label>
+        <label class="adv-radio"><input type="radio" name="quantAlgo" value="euclidean"><span>欧氏距离</span></label>
+        <label class="adv-radio"><input type="radio" name="quantAlgo" value="hsl"><span>HSL 色相</span></label>
+        <label class="adv-radio"><input type="radio" name="quantAlgo" value="lab"><span>CIELAB</span></label>
+      </div>
+    </div>
+
+    <div class="adv-section">
+      <div class="adv-label">选项 6 &nbsp;滤镜<em class="adv-default">默认：无滤镜</em></div>
+      <div class="adv-filter-grid">
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="none" checked><span>无滤镜</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="grayscale"><span>灰度</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="sepia"><span>复古褪色</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="invert"><span>反色</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="warm"><span>暖色调</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="cool"><span>冷色调</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="vivid"><span>鲜艳</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="desaturate"><span>淡雅</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="film"><span>胶片</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="sketch"><span>素描</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="vintage"><span>怀旧</span></label>
+        <label class="adv-filter-btn"><input type="radio" name="filterAlgo" value="highcontrast"><span>高对比度</span></label>
+      </div>
+    </div>
+
+  </aside>
+
+</div><!-- /layout -->
+
+<!-- 下载选项弹窗 -->
+<div id="downloadModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <span>下载选项</span>
+      <button id="modalCloseBtn" class="modal-close" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-options">
+        <label class="modal-option">
+          <input type="radio" name="dlOption" value="normal">
+          <div class="modal-option-text">
+            <span class="modal-option-label">普通下载</span>
+            <span class="modal-option-desc">720×720 px</span>
+          </div>
+        </label>
+        <label class="modal-option">
+          <input type="radio" name="dlOption" value="labeled">
+          <div class="modal-option-text">
+            <span class="modal-option-label">标号版</span>
+            <span class="modal-option-desc">1280×720 px，含标号与示意图</span>
+          </div>
+        </label>
+        <label class="modal-option">
+          <input type="radio" name="dlOption" value="pixel">
+          <div class="modal-option-text">
+            <span class="modal-option-label">像素位图版</span>
+            <span class="modal-option-desc">24×24 px，纯色块无白边</span>
+          </div>
+        </label>
+      </div>
+      <div class="modal-preview">
+        <canvas id="modalPreviewCanvas"></canvas>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="modalDownloadBtn" class="btn btn--primary">下载</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
