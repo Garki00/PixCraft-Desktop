@@ -9,7 +9,7 @@
 
 ---
 - 本应用基于 [PixCraft](https://github.com/Garki00/PixCraft) 开发。
-
+- ~~做出依托红豆泥果咩~~
 ---
 ## 功能概览
 
